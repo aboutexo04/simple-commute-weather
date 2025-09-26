@@ -3,6 +3,7 @@
 import os
 from datetime import datetime
 from typing import Dict, Any
+import pytz
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, Response
@@ -161,7 +162,8 @@ async def home():
             // 시간대별 메시지 설정
             function setWelcomeMessage() {
                 const now = new Date();
-                const hour = now.getHours();
+                const kstTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+                const hour = kstTime.getHours();
                 let message = "";
 
                 if (hour >= 5 && hour < 9) {
@@ -278,25 +280,27 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
                 current_temp = latest.temperature_c
                 current_humidity = latest.relative_humidity
         elif prediction_type == "morning":
-            # 현재 시간이 오전 6-9시가 아니면 안내 메시지
-            current_hour = datetime.now().hour
+            # 현재 시간이 오전 6-9시가 아니면 안내 메시지 (한국 시간 기준)
+            kst = pytz.timezone('Asia/Seoul')
+            current_hour = datetime.now(kst).hour
             if not (6 <= current_hour <= 9):
                 return {
                     "title": "🌅 출근길 예측",
                     "message": "출근길 예측은 오전 6-9시에 가장 정확합니다.",
-                    "current_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "current_time": datetime.now(kst).strftime("%Y-%m-%d %H:%M"),
                     "recommendation": "아침 시간대에 다시 확인해주세요! 😊"
                 }
             prediction = predictor.predict_morning_commute()
             title = "🌅 출근길 예측"
         elif prediction_type == "evening":
-            # 현재 시간이 오후 2-6시가 아니면 안내 메시지
-            current_hour = datetime.now().hour
+            # 현재 시간이 오후 2-6시가 아니면 안내 메시지 (한국 시간 기준)
+            kst = pytz.timezone('Asia/Seoul')
+            current_hour = datetime.now(kst).hour
             if not (14 <= current_hour <= 18):
                 return {
                     "title": "🌆 퇴근길 예측",
                     "message": "퇴근길 예측은 오후 2-6시에 가장 정확합니다.",
-                    "current_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "current_time": datetime.now(kst).strftime("%Y-%m-%d %H:%M"),
                     "recommendation": "오후 시간대에 다시 확인해주세요! 😊"
                 }
             prediction = predictor.predict_evening_commute()

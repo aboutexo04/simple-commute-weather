@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 from typing import Optional
+import pytz
 
 from ..config import KMAAPIConfig
 from ..data_sources.weather_api import fetch_kma_weather, WeatherObservation
@@ -31,7 +32,8 @@ class CommutePredictor:
     def predict_morning_commute(self) -> CommutePrediction:
         """Predict morning commute comfort using last 3 hours of weather data."""
 
-        current_time = dt.datetime.now()
+        kst = pytz.timezone('Asia/Seoul')
+        current_time = dt.datetime.now(kst)
 
         # Get weather data from last 3 hours for morning prediction
         observations = fetch_kma_weather(
@@ -59,7 +61,8 @@ class CommutePredictor:
     def predict_evening_commute(self) -> CommutePrediction:
         """Predict evening commute comfort using weather data from 2-5 PM."""
 
-        current_time = dt.datetime.now()
+        kst = pytz.timezone('Asia/Seoul')
+        current_time = dt.datetime.now(kst)
         today = current_time.date()
 
         # Define afternoon period (2-5 PM)
@@ -112,7 +115,8 @@ class CommutePredictor:
     def get_current_prediction(self) -> CommutePrediction:
         """Get appropriate prediction based on current time."""
 
-        current_hour = dt.datetime.now().hour
+        kst = pytz.timezone('Asia/Seoul')
+        current_hour = dt.datetime.now(kst).hour
 
         if 6 <= current_hour < 10:
             # Morning hours: predict morning commute

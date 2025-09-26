@@ -1,0 +1,28 @@
+{
+  "observations": [
+    {
+      "timestamp": "2024-05-05T07:00:00",
+      "temperature_c": 18.0,
+      "wind_speed_ms": 3.2,
+      "precipitation_mm": 0.0,
+      "relative_humidity": 55.0,
+      "condition_code": "partly_cloudy"
+    },
+    {
+      "timestamp": "2024-05-05T08:00:00",
+      "temperature_c": 19.5,
+      "wind_speed_ms": 3.8,
+      "precipitation_mm": 0.0,
+      "relative_humidity": 53.0,
+      "condition_code": "partly_cloudy"
+    },
+    {
+      "timestamp": "2024-05-05T09:00:00",
+      "temperature_c": 21.0,
+      "wind_speed_ms": 4.2,
+      "precipitation_mm": 0.0,
+      "relative_humidity": 50.0,
+      "condition_code": "sunny"
+    }
+  ]
+}

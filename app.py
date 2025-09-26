@@ -1,0 +1,362 @@
+"""FastAPI web application for commute weather predictions."""
+
+import os
+from datetime import datetime
+from typing import Dict, Any
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+
+# Import our commute weather modules
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+from commute_weather.config import KMAAPIConfig
+from commute_weather.pipelines.commute_predictor import CommutePredictor
+from commute_weather.data_sources.weather_api import fetch_kma_weather
+
+app = FastAPI(
+    title="출퇴근길 날씨 친구",
+    description="기상청 데이터를 활용한 실시간 출퇴근 날씨 쾌적도 예측 서비스",
+    version="1.0.0"
+)
+
+# Create KMA config from environment variables
+def get_kma_config() -> KMAAPIConfig:
+    auth_key = os.getenv("KMA_AUTH_KEY")
+    if not auth_key:
+        raise HTTPException(status_code=500, detail="KMA_AUTH_KEY not configured")
+
+    return KMAAPIConfig(
+        base_url="https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php",
+        auth_key=auth_key,
+        station_id=os.getenv("KMA_STATION_ID", "108"),
+    )
+
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    """Main page with weather prediction interface."""
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>출퇴근길 날씨 친구</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background: linear-gradient(135deg, #4A90E2 0%, #2E86AB 100%);
+                min-height: 100vh;
+                color: white;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                padding: 30px;
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            }
+            h1 {
+                text-align: center;
+                margin-bottom: 30px;
+                font-size: 2.5em;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            }
+            .buttons {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }
+            button {
+                padding: 15px 25px;
+                font-size: 16px;
+                border: none;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(5px);
+            }
+            button:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            }
+            #result {
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 15px;
+                padding: 20px;
+                margin-top: 20px;
+                min-height: 100px;
+                white-space: pre-line;
+            }
+            .loading {
+                text-align: center;
+                color: #ccc;
+            }
+            .score {
+                font-size: 2em;
+                font-weight: bold;
+                text-align: center;
+                margin: 20px 0;
+            }
+            .excellent { color: #FFD700; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+            .good { color: #90EE90; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+            .fair { color: #FFE4B5; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+            .poor { color: #FFB6C1; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🌤️ 출퇴근길 날씨 친구</h1>
+
+            <div class="buttons">
+                <button onclick="getPrediction('now')">📱 지금 날씨</button>
+                <button onclick="getPrediction('morning')">🌅 출근길 예측</button>
+                <button onclick="getPrediction('evening')">🌆 퇴근길 예측</button>
+            </div>
+
+            <div id="result">
+                <div class="loading" id="welcomeMessage">메시지 로딩 중...</div>
+            </div>
+        </div>
+
+        <script>
+            // 시간대별 메시지 설정
+            function setWelcomeMessage() {
+                const now = new Date();
+                const hour = now.getHours();
+                let message = "";
+
+                if (hour >= 5 && hour < 9) {
+                    // 새벽~아침 (5-8시)
+                    message = "좋은 아침이에요! 😊<br>오늘 하루도 화이팅입니다! ☀️";
+                } else if (hour >= 9 && hour < 12) {
+                    // 오전 (9-11시)
+                    message = "활기찬 오전이네요! 💪<br>오늘도 좋은 하루 되세요! ✨";
+                } else if (hour >= 12 && hour < 14) {
+                    // 점심시간 (12-13시)
+                    message = "점심시간이에요! 🍽️<br>맛있는 식사 하시고 힘내세요! 😋";
+                } else if (hour >= 14 && hour < 18) {
+                    // 오후 (14-17시)
+                    message = "근무하시느라 힘드시죠? 💼<br>조금만 더 힘내세요! 응원합니다! 📈";
+                } else if (hour >= 18 && hour < 22) {
+                    // 저녁 (18-21시)
+                    message = "오늘도 고생 많으셨어요! 😊<br>푹 쉬시고 좋은 저녁 되세요! 🌆";
+                } else {
+                    // 밤/새벽 (22-4시)
+                    message = "늦은 시간이네요! 🌙<br>푹 쉬시고 내일도 좋은 하루 되세요! 💤";
+                }
+
+                document.getElementById('welcomeMessage').innerHTML = message;
+            }
+
+            // 페이지 로드 시 메시지 설정
+            window.onload = function() {
+                setWelcomeMessage();
+            };
+
+            async function getPrediction(type) {
+                const resultDiv = document.getElementById('result');
+                if (type === 'now') {
+                    resultDiv.innerHTML = '<div class="loading">⏳ 관측 중...</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="loading">⏳ 예측 중...</div>';
+                }
+
+                try {
+                    const response = await fetch(`/predict/${type}`);
+                    const data = await response.json();
+
+                    console.log('Response data:', data); // 디버깅용
+
+                    if (response.ok) {
+                        displayResult(data);
+                    } else {
+                        resultDiv.innerHTML = `❌ 오류: ${data.detail}`;
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `❌ 네트워크 오류: ${error.message}`;
+                }
+            }
+
+
+            function displayResult(data) {
+                // 시간대 안내 메시지 처리
+                if (data.message) {
+                    document.getElementById('result').innerHTML = `
+                        <h3>${data.title}</h3>
+                        <p>⏰ <strong>현재 시간:</strong> ${data.current_time}</p>
+                        <p>💡 ${data.message}</p>
+                        <p>${data.recommendation}</p>
+                    `;
+                    return;
+                }
+
+                const scoreClass = data.score >= 80 ? 'excellent' :
+                                 data.score >= 60 ? 'good' :
+                                 data.score >= 40 ? 'fair' : 'poor';
+
+                const emoji = data.score >= 80 ? '☀️' :
+                             data.score >= 60 ? '😊' :
+                             data.score >= 40 ? '🌤️' : '🌧️';
+
+                // 지금 날씨는 간단하게 표시
+                if (data.title.includes('현재 시점')) {
+                    document.getElementById('result').innerHTML = `
+                        <p><strong>📅 현재 시간:</strong> ${data.prediction_time}</p>
+                        <p>🌡️ 온도: ${data.current_temp || 'N/A'}°C</p>
+                        <p>💧 습도: ${data.current_humidity || 'N/A'}%</p>
+                    `;
+                } else {
+                    // 출퇴근 예측은 쾌적지수와 평가만 표시
+                    document.getElementById('result').innerHTML = `
+                        <div class="score ${scoreClass}">🌟 ${data.score}/100 (${data.label})</div>
+                        <p>${data.evaluation} ${emoji}</p>
+                    `;
+                }
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return html_content
+
+@app.get("/predict/{prediction_type}")
+async def predict(prediction_type: str) -> Dict[str, Any]:
+    """Get weather prediction for specified type."""
+    try:
+        config = get_kma_config()
+        predictor = CommutePredictor(config)
+
+        if prediction_type == "now":
+            prediction = predictor.get_current_prediction()
+            title = "📱 현재 시점 예측"
+
+            # 현재 날씨를 위한 최신 관측 데이터 가져오기
+            latest_observations = fetch_kma_weather(config, lookback_hours=1)
+            current_temp = None
+            current_humidity = None
+            if latest_observations:
+                latest = latest_observations[-1]
+                current_temp = latest.temperature_c
+                current_humidity = latest.relative_humidity
+        elif prediction_type == "morning":
+            # 현재 시간이 오전 6-9시가 아니면 안내 메시지
+            current_hour = datetime.now().hour
+            if not (6 <= current_hour <= 9):
+                return {
+                    "title": "🌅 출근길 예측",
+                    "message": "출근길 예측은 오전 6-9시에 가장 정확합니다.",
+                    "current_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "recommendation": "아침 시간대에 다시 확인해주세요! 😊"
+                }
+            prediction = predictor.predict_morning_commute()
+            title = "🌅 출근길 예측"
+        elif prediction_type == "evening":
+            # 현재 시간이 오후 2-6시가 아니면 안내 메시지
+            current_hour = datetime.now().hour
+            if not (14 <= current_hour <= 18):
+                return {
+                    "title": "🌆 퇴근길 예측",
+                    "message": "퇴근길 예측은 오후 2-6시에 가장 정확합니다.",
+                    "current_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "recommendation": "오후 시간대에 다시 확인해주세요! 😊"
+                }
+            prediction = predictor.predict_evening_commute()
+            title = "🌆 퇴근길 예측"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid prediction type")
+
+        # Generate evaluation message
+        score = prediction.comfort_score.score
+
+        # 출근길/퇴근길에 따라 다른 메시지
+        if prediction_type == "morning":
+            if score >= 80:
+                evaluation = "완벽한 출근 날씨입니다!"
+            elif score >= 60:
+                evaluation = "쾌적한 출근길이 예상됩니다."
+            elif score >= 40:
+                evaluation = "보통 수준의 출근 날씨입니다."
+            else:
+                evaluation = "불편한 출근 날씨가 예상됩니다. 준비하세요!"
+        elif prediction_type == "evening":
+            if score >= 80:
+                evaluation = "완벽한 퇴근 날씨입니다!"
+            elif score >= 60:
+                evaluation = "쾌적한 퇴근길이 예상됩니다."
+            elif score >= 40:
+                evaluation = "보통 수준의 퇴근 날씨입니다."
+            else:
+                evaluation = "불편한 퇴근 날씨가 예상됩니다. 준비하세요!"
+        else:
+            # 기본 메시지 (now의 경우)
+            if score >= 80:
+                evaluation = "완벽한 날씨입니다!"
+            elif score >= 60:
+                evaluation = "쾌적한 날씨입니다."
+            elif score >= 40:
+                evaluation = "보통 수준의 날씨입니다."
+            else:
+                evaluation = "불편한 날씨입니다. 준비하세요!"
+
+        response_data = {
+            "title": title,
+            "score": round(prediction.comfort_score.score, 1),
+            "label": prediction.comfort_score.label,
+            "prediction_time": prediction.prediction_time.strftime("%Y-%m-%d %H:%M"),
+            "data_period": prediction.data_period,
+            "observations_count": prediction.observations_count,
+            "penalties": prediction.comfort_score.penalties,
+            "evaluation": evaluation
+        }
+
+        # 현재 날씨 요청의 경우 온도와 습도 추가
+        if prediction_type == "now":
+            response_data["current_temp"] = current_temp
+            response_data["current_humidity"] = current_humidity
+
+        return response_data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/test")
+async def test_api() -> Dict[str, str]:
+    """Test KMA API connection."""
+    try:
+        config = get_kma_config()
+        observations = fetch_kma_weather(config, lookback_hours=1)
+
+        if observations:
+            latest = observations[-1]
+            return {
+                "message": "API 연결 성공!",
+                "details": f"{len(observations)}개 관측 데이터 수신 - 최신: {latest.timestamp} ({latest.temperature_c}°C)"
+            }
+        else:
+            return {
+                "message": "API 연결됨",
+                "details": "데이터가 없습니다."
+            }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"API 연결 실패: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

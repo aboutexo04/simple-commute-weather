@@ -46,6 +46,20 @@ async def home():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>출퇴근길 날씨 친구</title>
+
+        <!-- PWA 메타데이터 -->
+        <meta name="description" content="기상청 데이터 기반 실시간 출퇴근 쾌적지수 예측 서비스">
+        <meta name="theme-color" content="#4A90E2">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="날씨친구">
+
+        <!-- 아이콘 -->
+        <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A90E2' rx='20'/><text x='50' y='65' font-size='40' text-anchor='middle' fill='white'>🌤️</text></svg>">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A90E2' rx='20'/><text x='50' y='65' font-size='40' text-anchor='middle' fill='white'>🌤️</text></svg>">
+
+        <!-- 매니페스트 -->
+        <link rel="manifest" href="/manifest.json">
         <style>
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -352,6 +366,35 @@ async def test_api() -> Dict[str, str]:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"API 연결 실패: {str(e)}")
+
+@app.get("/manifest.json")
+async def get_manifest():
+    """PWA manifest file."""
+    return {
+        "name": "출퇴근길 날씨 친구",
+        "short_name": "날씨친구",
+        "description": "기상청 데이터 기반 실시간 출퇴근 쾌적지수 예측 서비스",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#4A90E2",
+        "theme_color": "#4A90E2",
+        "orientation": "portrait",
+        "scope": "/",
+        "icons": [
+            {
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%234A90E2' rx='40'/><text x='96' y='130' font-size='80' text-anchor='middle' fill='white'>🌤️</text></svg>",
+                "sizes": "192x192",
+                "type": "image/svg+xml",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%234A90E2' rx='100'/><text x='256' y='350' font-size='200' text-anchor='middle' fill='white'>🌤️</text></svg>",
+                "sizes": "512x512",
+                "type": "image/svg+xml",
+                "purpose": "any maskable"
+            }
+        ]
+    }
 
 @app.get("/health")
 async def health_check():

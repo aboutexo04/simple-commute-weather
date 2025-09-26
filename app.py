@@ -55,8 +55,8 @@ async def home():
         <meta name="apple-mobile-web-app-title" content="날씨친구">
 
         <!-- 아이콘 -->
-        <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A90E2' rx='20'/><text x='50' y='65' font-size='40' text-anchor='middle' fill='white'>🌤️</text></svg>">
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A90E2' rx='20'/><text x='50' y='65' font-size='40' text-anchor='middle' fill='white'>🌤️</text></svg>">
+        <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A90E2' rx='20'/><text x='50' y='65' font-size='40' text-anchor='middle' fill='white'>🌈</text></svg>">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A90E2' rx='20'/><text x='50' y='65' font-size='40' text-anchor='middle' fill='white'>🌈</text></svg>">
 
         <!-- 매니페스트 -->
         <link rel="manifest" href="/manifest.json">
@@ -382,13 +382,13 @@ async def get_manifest():
         "scope": "/",
         "icons": [
             {
-                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%234A90E2' rx='40'/><text x='96' y='130' font-size='80' text-anchor='middle' fill='white'>🌤️</text></svg>",
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%234A90E2' rx='40'/><text x='96' y='130' font-size='80' text-anchor='middle' fill='white'>🌈</text></svg>",
                 "sizes": "192x192",
                 "type": "image/svg+xml",
                 "purpose": "any maskable"
             },
             {
-                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%234A90E2' rx='100'/><text x='256' y='350' font-size='200' text-anchor='middle' fill='white'>🌤️</text></svg>",
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%234A90E2' rx='100'/><text x='256' y='350' font-size='200' text-anchor='middle' fill='white'>🌈</text></svg>",
                 "sizes": "512x512",
                 "type": "image/svg+xml",
                 "purpose": "any maskable"

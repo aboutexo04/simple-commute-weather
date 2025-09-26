@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
@@ -60,6 +60,19 @@ async def home():
 
         <!-- 매니페스트 -->
         <link rel="manifest" href="/manifest.json">
+
+        <!-- Service Worker 등록 -->
+        <script>
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('SW registered');
+                    })
+                    .catch(function(registrationError) {
+                        console.log('SW registration failed');
+                    });
+            }
+        </script>
         <style>
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -395,6 +408,40 @@ async def get_manifest():
             }
         ]
     }
+
+@app.get("/sw.js")
+async def get_service_worker():
+    """Service Worker for PWA."""
+    sw_content = """
+const CACHE_NAME = 'weather-friend-v1';
+const urlsToCache = [
+  '/',
+  '/manifest.json'
+];
+
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+"""
+    return Response(content=sw_content, media_type="application/javascript")
 
 @app.get("/health")
 async def health_check():

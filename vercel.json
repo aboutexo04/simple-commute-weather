@@ -13,7 +13,7 @@
     }
   ],
   "env": {
-    "KMA_AUTH_KEY": "@kma_auth_key",
+    "KMA_AUTH_KEY": "@kma-auth-key",
     "KMA_STATION_ID": "108"
   }
 }

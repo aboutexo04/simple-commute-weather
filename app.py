@@ -389,6 +389,7 @@ async def get_manifest():
         "description": "기상청 데이터 기반 실시간 출퇴근 쾌적지수 예측 서비스",
         "start_url": "/",
         "display": "standalone",
+        "categories": ["weather", "productivity"],
         "background_color": "#4A90E2",
         "theme_color": "#4A90E2",
         "orientation": "portrait",

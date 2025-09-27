@@ -61,10 +61,25 @@ def _temperature_penalty(observations: list[WeatherObservation]) -> float:
 
 
 def _precipitation_penalty(observations: list[WeatherObservation]) -> float:
-    precip_total = sum(obs.precipitation_mm for obs in observations)
-    if precip_total == 0:
+    """Calculate precipitation penalty with different weights for rain vs snow."""
+    rain_total = 0.0
+    snow_total = 0.0
+
+    for obs in observations:
+        if obs.precipitation_mm > 0:
+            if obs.precipitation_type == "snow":
+                snow_total += obs.precipitation_mm
+            else:  # rain or unspecified precipitation
+                rain_total += obs.precipitation_mm
+
+    if rain_total == 0 and snow_total == 0:
         return 0.0
-    return min(35.0, precip_total * 6.0)
+
+    # Snow is more inconvenient than rain for commuting
+    rain_penalty = min(30.0, rain_total * 5.0)      # Rain: up to 30 points
+    snow_penalty = min(40.0, snow_total * 8.0)      # Snow: up to 40 points (worse)
+
+    return rain_penalty + snow_penalty
 
 
 def _wind_penalty(observations: list[WeatherObservation]) -> float:

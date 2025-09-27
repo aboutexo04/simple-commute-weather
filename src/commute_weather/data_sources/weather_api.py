@@ -21,6 +21,7 @@ class WeatherObservation:
     precipitation_mm: float
     relative_humidity: Optional[float] = None
     condition_code: Optional[str] = None
+    precipitation_type: Optional[str] = None  # "rain", "snow", "none"
 
 
 def _default_headers(api_key: Optional[str]) -> Mapping[str, str]:
@@ -156,6 +157,14 @@ def normalize_kma_observations(response_text: str) -> List[WeatherObservation]:
                     except ValueError:
                         pass
 
+            # Determine precipitation type based on temperature and amount
+            precipitation_type = "none"
+            if precipitation_mm > 0:
+                if temperature_c and temperature_c <= 2.0:
+                    precipitation_type = "snow"  # Snow when temp <= 2°C
+                else:
+                    precipitation_type = "rain"  # Rain when temp > 2°C
+
             # Add observation (temperature_c can be None, we'll handle it in scoring)
             observations.append(
                 WeatherObservation(
@@ -165,6 +174,7 @@ def normalize_kma_observations(response_text: str) -> List[WeatherObservation]:
                     precipitation_mm=precipitation_mm,
                     relative_humidity=relative_humidity,
                     condition_code=None,
+                    precipitation_type=precipitation_type,
                 )
             )
 
@@ -193,6 +203,7 @@ def normalize_observations(payload: Mapping[str, object]) -> List[WeatherObserva
                     precipitation_mm=float(entry.get("precipitation_mm", 0.0) or 0.0),
                     relative_humidity=float(entry.get("relative_humidity")) if entry.get("relative_humidity") is not None else None,
                     condition_code=str(entry.get("condition_code")) if entry.get("condition_code") is not None else None,
+                    precipitation_type=str(entry.get("precipitation_type", "none")),
                 )
             )
         except (KeyError, TypeError, ValueError) as exc:

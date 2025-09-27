@@ -239,12 +239,22 @@ async def home():
                              data.score >= 60 ? '😊' :
                              data.score >= 40 ? '🌤️' : '🌧️';
 
-                // 지금 날씨는 온도/습도만 표시 (쾌적지수 없음)
+                // 지금 날씨는 온도/습도/강수량 표시 (쾌적지수 없음)
                 if (data.title.includes('현재 시점')) {
+                    let precipitationInfo = '';
+                    if (data.current_precipitation > 0) {
+                        const precipIcon = data.current_precipitation_type === 'snow' ? '❄️' : '🌧️';
+                        const precipType = data.current_precipitation_type === 'snow' ? '눈' : '비';
+                        precipitationInfo = `<p>${precipIcon} ${precipType}: ${data.current_precipitation}mm</p>`;
+                    } else {
+                        precipitationInfo = '<p>☀️ 강수: 없음</p>';
+                    }
+
                     document.getElementById('result').innerHTML = `
                         <p><strong>📅 현재 시간:</strong> ${data.prediction_time}</p>
                         <p>🌡️ 온도: ${data.current_temp || 'N/A'}°C</p>
                         <p>💧 습도: ${data.current_humidity || 'N/A'}%</p>
+                        ${precipitationInfo}
                     `;
                 } else {
                     // 출퇴근 예측은 쾌적지수와 평가만 표시
@@ -275,10 +285,14 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             latest_observations = fetch_kma_weather(config, lookback_hours=1)
             current_temp = None
             current_humidity = None
+            current_precipitation = None
+            current_precipitation_type = None
             if latest_observations:
                 latest = latest_observations[-1]
                 current_temp = latest.temperature_c
                 current_humidity = latest.relative_humidity
+                current_precipitation = latest.precipitation_mm
+                current_precipitation_type = latest.precipitation_type
         elif prediction_type == "morning":
             # 현재 시간이 오전 6-9시가 아니면 안내 메시지 (한국 시간 기준)
             kst = pytz.timezone('Asia/Seoul')
@@ -352,10 +366,12 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             "evaluation": evaluation
         }
 
-        # 현재 날씨 요청의 경우 온도와 습도 추가
+        # 현재 날씨 요청의 경우 온도, 습도, 강수량 추가
         if prediction_type == "now":
             response_data["current_temp"] = current_temp
             response_data["current_humidity"] = current_humidity
+            response_data["current_precipitation"] = current_precipitation
+            response_data["current_precipitation_type"] = current_precipitation_type
 
         return response_data
 

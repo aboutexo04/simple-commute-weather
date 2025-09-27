@@ -237,7 +237,7 @@ async def home():
 
                 const emoji = data.score >= 80 ? '☀️' :
                              data.score >= 60 ? '😊' :
-                             data.score >= 50 ? '😟' : '😰';
+                             data.score >= 50 ? '😣' : '🥶';
 
                 // 지금 날씨는 온도/습도/강수량 표시 (쾌적지수 없음)
                 if (data.title.includes('현재 시점')) {
@@ -332,7 +332,7 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             elif score >= 60:
                 evaluation = "쾌적한 출근길이 예상됩니다."
             elif score >= 50:
-                evaluation = "불편한 출근 날씨입니다. 준비하세요!"
+                evaluation = "불편한 출근 날씨입니다. 대비하세요!"
             else:
                 evaluation = "매우 불편한 출근 날씨입니다. 각별히 주의하세요!"
         elif prediction_type == "evening":
@@ -341,7 +341,7 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             elif score >= 60:
                 evaluation = "쾌적한 퇴근길이 예상됩니다."
             elif score >= 50:
-                evaluation = "불편한 퇴근 날씨입니다. 준비하세요!"
+                evaluation = "불편한 퇴근 날씨입니다. 대비하세요!"
             else:
                 evaluation = "매우 불편한 퇴근 날씨입니다. 각별히 주의하세요!"
         else:
@@ -351,7 +351,7 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             elif score >= 60:
                 evaluation = "쾌적한 날씨입니다."
             elif score >= 50:
-                evaluation = "불편한 날씨입니다. 준비하세요!"
+                evaluation = "불편한 날씨입니다. 대비하세요!"
             else:
                 evaluation = "매우 불편한 날씨입니다. 각별히 주의하세요!"
 

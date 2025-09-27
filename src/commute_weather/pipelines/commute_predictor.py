@@ -59,56 +59,31 @@ class CommutePredictor:
         )
 
     def predict_evening_commute(self) -> CommutePrediction:
-        """Predict evening commute comfort using weather data from 2-5 PM."""
+        """Predict evening commute comfort using last 3 hours of weather data."""
 
         kst = pytz.timezone('Asia/Seoul')
         current_time = dt.datetime.now(kst)
-        today = current_time.date()
 
-        # Define afternoon period (2-5 PM) in KST
-        start_time = kst.localize(dt.datetime.combine(today, dt.time(14, 0)))  # 2 PM KST
-        end_time = kst.localize(dt.datetime.combine(today, dt.time(17, 0)))    # 5 PM KST
-
-        # Calculate hours from start_time to current time
-        if current_time < start_time:
-            # If current time is before 2 PM, we can't make evening prediction yet
-            raise ValueError("Cannot predict evening commute before 2 PM")
-
-        # Get hours between start_time and current time (or end_time if past 5 PM)
-        actual_end_time = min(current_time, end_time)
-        lookback_hours = int((actual_end_time - start_time).total_seconds() / 3600)
-
-        if lookback_hours < 1:
-            lookback_hours = 1  # Minimum 1 hour
-
+        # Get weather data from last 3 hours for evening prediction
         observations = fetch_kma_weather(
             self.kma_config,
-            lookback_hours=lookback_hours
+            lookback_hours=3
         )
 
         if not observations:
             raise ValueError("No weather observations available for evening prediction")
 
-        # Filter observations to only include afternoon period
-        afternoon_observations = [
-            obs for obs in observations
-            if start_time <= obs.timestamp <= actual_end_time
-        ]
-
-        if not afternoon_observations:
-            # If no afternoon data, use all available recent data
-            afternoon_observations = observations
-
-        comfort_score = compute_commute_comfort_score(afternoon_observations)
+        comfort_score = compute_commute_comfort_score(observations)
 
         # Create data period description
-        data_period = f"{start_time.strftime('%H:%M')}-{actual_end_time.strftime('%H:%M')}"
+        start_time = current_time - dt.timedelta(hours=3)
+        data_period = f"{start_time.strftime('%H:%M')}-{current_time.strftime('%H:%M')}"
 
         return CommutePrediction(
             prediction_time=current_time,
             target_period="evening_commute",
             comfort_score=comfort_score,
-            observations_count=len(afternoon_observations),
+            observations_count=len(observations),
             data_period=data_period
         )
 

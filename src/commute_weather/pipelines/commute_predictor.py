@@ -65,9 +65,9 @@ class CommutePredictor:
         current_time = dt.datetime.now(kst)
         today = current_time.date()
 
-        # Define afternoon period (2-5 PM)
-        start_time = dt.datetime.combine(today, dt.time(14, 0))  # 2 PM
-        end_time = dt.datetime.combine(today, dt.time(17, 0))    # 5 PM
+        # Define afternoon period (2-5 PM) in KST
+        start_time = kst.localize(dt.datetime.combine(today, dt.time(14, 0)))  # 2 PM KST
+        end_time = kst.localize(dt.datetime.combine(today, dt.time(17, 0)))    # 5 PM KST
 
         # Calculate hours from start_time to current time
         if current_time < start_time:

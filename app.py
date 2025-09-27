@@ -139,8 +139,8 @@ async def home():
             }
             .excellent { color: #FFD700; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
             .good { color: #90EE90; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-            .fair { color: #FFE4B5; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-            .poor { color: #FFB6C1; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+            .uncomfortable { color: #FFA500; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+            .very_uncomfortable { color: #FF6B6B; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         </style>
     </head>
     <body>
@@ -233,11 +233,11 @@ async def home():
 
                 const scoreClass = data.score >= 80 ? 'excellent' :
                                  data.score >= 60 ? 'good' :
-                                 data.score >= 40 ? 'fair' : 'poor';
+                                 data.score >= 50 ? 'uncomfortable' : 'very_uncomfortable';
 
                 const emoji = data.score >= 80 ? '☀️' :
                              data.score >= 60 ? '😊' :
-                             data.score >= 40 ? '🌤️' : '🌧️';
+                             data.score >= 50 ? '😟' : '😰';
 
                 // 지금 날씨는 온도/습도/강수량 표시 (쾌적지수 없음)
                 if (data.title.includes('현재 시점')) {
@@ -331,29 +331,29 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
                 evaluation = "완벽한 출근 날씨입니다!"
             elif score >= 60:
                 evaluation = "쾌적한 출근길이 예상됩니다."
-            elif score >= 40:
-                evaluation = "보통 수준의 출근 날씨입니다."
+            elif score >= 50:
+                evaluation = "불편한 출근 날씨입니다. 준비하세요!"
             else:
-                evaluation = "불편한 출근 날씨가 예상됩니다. 준비하세요!"
+                evaluation = "매우 불편한 출근 날씨입니다. 각별히 주의하세요!"
         elif prediction_type == "evening":
             if score >= 80:
                 evaluation = "완벽한 퇴근 날씨입니다!"
             elif score >= 60:
                 evaluation = "쾌적한 퇴근길이 예상됩니다."
-            elif score >= 40:
-                evaluation = "보통 수준의 퇴근 날씨입니다."
+            elif score >= 50:
+                evaluation = "불편한 퇴근 날씨입니다. 준비하세요!"
             else:
-                evaluation = "불편한 퇴근 날씨가 예상됩니다. 준비하세요!"
+                evaluation = "매우 불편한 퇴근 날씨입니다. 각별히 주의하세요!"
         else:
             # 기본 메시지 (now의 경우)
             if score >= 80:
                 evaluation = "완벽한 날씨입니다!"
             elif score >= 60:
                 evaluation = "쾌적한 날씨입니다."
-            elif score >= 40:
-                evaluation = "보통 수준의 날씨입니다."
-            else:
+            elif score >= 50:
                 evaluation = "불편한 날씨입니다. 준비하세요!"
+            else:
+                evaluation = "매우 불편한 날씨입니다. 각별히 주의하세요!"
 
         response_data = {
             "title": title,

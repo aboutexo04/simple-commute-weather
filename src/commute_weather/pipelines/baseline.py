@@ -22,9 +22,9 @@ class ComfortScoreBreakdown:
             return "excellent"
         if self.score >= 60:
             return "good"
-        if self.score >= 40:
-            return "fair"
-        return "poor"
+        if self.score >= 50:
+            return "uncomfortable"
+        return "very_uncomfortable"
 
 
 def compute_commute_comfort_score(observations: Iterable[WeatherObservation]) -> ComfortScoreBreakdown:

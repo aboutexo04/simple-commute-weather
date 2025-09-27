@@ -239,6 +239,8 @@ async def home():
                              data.score >= 60 ? '😊' :
                              data.score >= 50 ? '😣' : '🥶';
 
+                const scoreIcon = data.score >= 60 ? '🌟' : '⚠️';
+
                 // 지금 날씨는 온도/습도/강수량 표시 (쾌적지수 없음)
                 if (data.title.includes('현재 시점')) {
                     let precipitationInfo = '';
@@ -259,7 +261,7 @@ async def home():
                 } else {
                     // 출퇴근 예측은 쾌적지수와 평가만 표시
                     document.getElementById('result').innerHTML = `
-                        <div class="score ${scoreClass}">🌟 ${data.score}/100 (${data.label})</div>
+                        <div class="score ${scoreClass}">${scoreIcon} ${data.score}/100 (${data.label})</div>
                         <p>${data.evaluation} ${emoji}</p>
                     `;
                 }

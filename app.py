@@ -239,7 +239,7 @@ async def home():
                              data.score >= 60 ? '😊' :
                              data.score >= 40 ? '🌤️' : '🌧️';
 
-                // 지금 날씨는 간단하게 표시
+                // 지금 날씨는 온도/습도만 표시 (쾌적지수 없음)
                 if (data.title.includes('현재 시점')) {
                     document.getElementById('result').innerHTML = `
                         <p><strong>📅 현재 시간:</strong> ${data.prediction_time}</p>

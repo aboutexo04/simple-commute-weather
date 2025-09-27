@@ -76,8 +76,8 @@ def _precipitation_penalty(observations: list[WeatherObservation]) -> float:
         return 0.0
 
     # Snow is more inconvenient than rain for commuting
-    rain_penalty = min(30.0, rain_total * 5.0)      # Rain: up to 30 points
-    snow_penalty = min(40.0, snow_total * 8.0)      # Snow: up to 40 points (worse)
+    rain_penalty = min(45.0, rain_total * 10.0)     # Rain: up to 45 points (doubled impact)
+    snow_penalty = min(50.0, snow_total * 15.0)     # Snow: up to 50 points (much worse)
 
     return rain_penalty + snow_penalty
 

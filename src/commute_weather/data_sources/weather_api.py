@@ -113,14 +113,7 @@ def normalize_kma_observations(response_text: str) -> List[WeatherObservation]:
     observations: List[WeatherObservation] = []
     lines = response_text.strip().split('\n')
 
-    # Debug: print first few lines to understand structure
-    print("=== KMA API Response Debug ===")
-    for i, line in enumerate(lines[:5]):
-        if not line.startswith('#') and line.strip():
-            parts = line.split()
-            print(f"Line {i}: {len(parts)} fields")
-            print(f"Fields: {parts}")
-            break
+    # Remove debug logging for production
 
     for line in lines:
         # Skip comment lines and empty lines
@@ -153,25 +146,22 @@ def normalize_kma_observations(response_text: str) -> List[WeatherObservation]:
             wind_speed_ms = float(parts[3]) if parts[3] not in ['-9.0', '-9', '-'] else 0.0
             relative_humidity = float(parts[13]) if parts[13] not in ['-9.0', '-9', '-'] else None
 
-            # For precipitation, we might need to check multiple fields
-            # RN fields are around positions 15-18, but let's check more broadly
+            # For precipitation, check specific RN fields (hourly precipitation)
+            # KMA API typically has hourly precipitation at specific positions
             precipitation_mm = 0.0
-            print(f"Checking precipitation in {len(parts)} fields:")
 
-            # Check broader range for precipitation fields
-            for rn_idx in range(10, min(len(parts), 25)):
-                if parts[rn_idx] not in ['-9.0', '-9', '-', '']:
+            # Try common KMA precipitation field positions
+            precipitation_fields = [14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+            for rn_idx in precipitation_fields:
+                if rn_idx < len(parts) and parts[rn_idx] not in ['-9.0', '-9', '-', '', '0.0', '0']:
                     try:
                         precip_val = float(parts[rn_idx])
-                        print(f"  Field {rn_idx}: {parts[rn_idx]} = {precip_val}")
                         if precip_val > 0:
                             precipitation_mm = precip_val
-                            print(f"  → Found precipitation: {precip_val}mm at field {rn_idx}")
-                            break
+                            break  # Use first non-zero precipitation value found
                     except ValueError:
-                        pass
-
-            print(f"Final precipitation: {precipitation_mm}mm")
+                        continue
 
             # Determine precipitation type based on temperature and amount
             precipitation_type = "none"

@@ -282,19 +282,11 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
         if prediction_type == "now":
             prediction = predictor.get_current_prediction()
             title = "📱 현재 시점 예측"
-
-            # 현재 날씨를 위한 최신 관측 데이터 가져오기
-            latest_observations = fetch_recent_weather_kma(config, lookback_hours=1)
-            current_temp = None
-            current_humidity = None
-            current_precipitation = None
-            current_precipitation_type = None
-            if latest_observations:
-                latest = latest_observations[-1]
-                current_temp = latest.temperature_c
-                current_humidity = latest.relative_humidity
-                current_precipitation = latest.precipitation_mm
-                current_precipitation_type = latest.precipitation_type
+            latest = prediction.latest_observation
+            current_temp = latest.temperature_c if latest else None
+            current_humidity = latest.relative_humidity if latest else None
+            current_precipitation = latest.precipitation_mm if latest else None
+            current_precipitation_type = latest.precipitation_type if latest else None
         elif prediction_type == "morning":
             # 현재 시간이 오전 6-9시가 아니면 안내 메시지 (한국 시간 기준)
             kst = pytz.timezone('Asia/Seoul')

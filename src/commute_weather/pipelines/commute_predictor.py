@@ -22,6 +22,7 @@ class CommutePrediction:
     comfort_score: ComfortScoreBreakdown
     observations_count: int
     data_period: str  # Time range of data used
+    latest_observation: Optional[WeatherObservation] = None
 
 
 class CommutePredictor:
@@ -56,7 +57,8 @@ class CommutePredictor:
             target_period="morning_commute",
             comfort_score=comfort_score,
             observations_count=len(observations),
-            data_period=data_period
+            data_period=data_period,
+            latest_observation=observations[-1] if observations else None,
         )
 
     def predict_evening_commute(self) -> CommutePrediction:
@@ -85,7 +87,8 @@ class CommutePredictor:
             target_period="evening_commute",
             comfort_score=comfort_score,
             observations_count=len(observations),
-            data_period=data_period
+            data_period=data_period,
+            latest_observation=observations[-1] if observations else None,
         )
 
     def get_current_prediction(self) -> CommutePrediction:

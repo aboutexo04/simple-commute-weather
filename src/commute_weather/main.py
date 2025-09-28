@@ -24,7 +24,7 @@ def create_kma_config() -> KMAAPIConfig:
     station_id = os.getenv("KMA_STATION_ID", "108")  # Default to Seoul
 
     return KMAAPIConfig(
-        base_url="https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php",
+        base_url="https://apihub.kma.go.kr/api/typ01/url/kma_sfctm2.php",
         auth_key=auth_key,
         station_id=station_id,
     )

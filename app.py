@@ -32,7 +32,7 @@ def get_kma_config() -> KMAAPIConfig:
         raise HTTPException(status_code=500, detail="KMA_AUTH_KEY not configured")
 
     return KMAAPIConfig(
-        base_url="https://apihub.kma.go.kr/api/typ01/url/kma_sfctm3.php",
+        base_url="https://apihub.kma.go.kr/api/typ01/url/kma_sfctm2.php",
         auth_key=auth_key,
         station_id=os.getenv("KMA_STATION_ID", "108"),
     )

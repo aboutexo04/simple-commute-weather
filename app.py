@@ -280,13 +280,42 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
         predictor = CommutePredictor(config)
 
         if prediction_type == "now":
-            prediction = predictor.get_current_prediction()
             title = "📱 현재 시점 예측"
-            latest = prediction.latest_observation
-            current_temp = latest.temperature_c if latest else None
-            current_humidity = latest.relative_humidity if latest else None
-            current_precipitation = latest.precipitation_mm if latest else None
-            current_precipitation_type = latest.precipitation_type if latest else None
+
+            prediction = None
+            prediction_error = None
+            try:
+                prediction = predictor.get_current_prediction()
+            except Exception as exc:
+                prediction_error = str(exc)
+
+            latest = (
+                prediction.latest_observation
+                if prediction and prediction.latest_observation
+                else None
+            )
+
+            fetch_error = None
+            if latest is None:
+                try:
+                    latest_observations = fetch_recent_weather_kma(
+                        config, lookback_hours=1
+                    )
+                    latest = latest_observations[-1] if latest_observations else None
+                except Exception as exc:  # pragma: no cover - network failure
+                    fetch_error = str(exc)
+
+            if latest is None:
+                detail = "현재 관측 데이터를 불러오지 못했습니다."
+                reason = fetch_error or prediction_error
+                if reason:
+                    detail = f"{detail} (원인: {reason})"
+                raise HTTPException(status_code=502, detail=detail)
+
+            current_temp = latest.temperature_c
+            current_humidity = latest.relative_humidity
+            current_precipitation = latest.precipitation_mm
+            current_precipitation_type = latest.precipitation_type
         elif prediction_type == "morning":
             # 현재 시간이 오전 6-9시가 아니면 안내 메시지 (한국 시간 기준)
             kst = pytz.timezone('Asia/Seoul')
@@ -317,7 +346,7 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail="Invalid prediction type")
 
         # Generate evaluation message
-        score = prediction.comfort_score.score
+        score = prediction.comfort_score.score if prediction else 0.0
 
         # 출근길/퇴근길에 따라 다른 메시지
         if prediction_type == "morning":
@@ -349,14 +378,28 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             else:
                 evaluation = "매우 불편한 날씨입니다. 각별히 주의하세요!"
 
+        if prediction:
+            prediction_time_str = prediction.prediction_time.strftime("%Y-%m-%d %H:%M")
+            data_period = prediction.data_period
+            observations_count = prediction.observations_count
+            penalties = prediction.comfort_score.penalties
+            label = prediction.comfort_score.label
+        else:
+            kst = pytz.timezone('Asia/Seoul')
+            prediction_time_str = datetime.now(kst).strftime("%Y-%m-%d %H:%M")
+            data_period = ""
+            observations_count = 0
+            penalties = {}
+            label = "unknown"
+
         response_data = {
             "title": title,
-            "score": round(prediction.comfort_score.score, 1),
-            "label": prediction.comfort_score.label,
-            "prediction_time": prediction.prediction_time.strftime("%Y-%m-%d %H:%M"),
-            "data_period": prediction.data_period,
-            "observations_count": prediction.observations_count,
-            "penalties": prediction.comfort_score.penalties,
+            "score": round(score, 1),
+            "label": label,
+            "prediction_time": prediction_time_str,
+            "data_period": data_period,
+            "observations_count": observations_count,
+            "penalties": penalties,
             "evaluation": evaluation
         }
 

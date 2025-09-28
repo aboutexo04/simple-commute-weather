@@ -146,22 +146,18 @@ def normalize_kma_observations(response_text: str) -> List[WeatherObservation]:
             wind_speed_ms = float(parts[3]) if parts[3] not in ['-9.0', '-9', '-'] else 0.0
             relative_humidity = float(parts[13]) if parts[13] not in ['-9.0', '-9', '-'] else None
 
-            # For precipitation, check specific RN fields (hourly precipitation)
-            # KMA API typically has hourly precipitation at specific positions
+            # For precipitation, use most recent hourly precipitation (RN field)
+            # KMA API: field 14 is typically RN (hourly precipitation in mm)
             precipitation_mm = 0.0
 
-            # Try common KMA precipitation field positions
-            precipitation_fields = [14, 15, 16, 17, 18, 19, 20, 21, 22]
-
-            for rn_idx in precipitation_fields:
-                if rn_idx < len(parts) and parts[rn_idx] not in ['-9.0', '-9', '-', '', '0.0', '0']:
-                    try:
-                        precip_val = float(parts[rn_idx])
-                        if precip_val > 0:
-                            precipitation_mm = precip_val
-                            break  # Use first non-zero precipitation value found
-                    except ValueError:
-                        continue
+            # Use only the primary hourly precipitation field (index 14)
+            if len(parts) > 14 and parts[14] not in ['-9.0', '-9', '-', '']:
+                try:
+                    precip_val = float(parts[14])
+                    if precip_val >= 0:  # Accept 0 and positive values, skip negative sentinel values
+                        precipitation_mm = precip_val
+                except ValueError:
+                    precipitation_mm = 0.0
 
             # Determine precipitation type based on temperature and amount
             precipitation_type = "none"

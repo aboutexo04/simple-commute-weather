@@ -105,6 +105,14 @@ def _parse_typ01_response(
         precipitation = _coerce_float_from_row(row, _PRECIP_KEYS) or 0.0
         humidity = _coerce_float_from_row(row, _HUMIDITY_KEYS)
 
+        # Determine precipitation type based on temperature
+        precipitation_type = "none"
+        if precipitation > 0:
+            if temperature is not None and temperature <= 2.0:
+                precipitation_type = "snow"
+            else:
+                precipitation_type = "rain"
+
         observations.append(
             WeatherObservation(
                 timestamp=timestamp,
@@ -112,6 +120,7 @@ def _parse_typ01_response(
                 wind_speed_ms=wind_speed,
                 precipitation_mm=precipitation,
                 relative_humidity=humidity,
+                precipitation_type=precipitation_type,
             )
         )
 

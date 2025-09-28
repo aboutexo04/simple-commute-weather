@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from commute_weather.config import KMAAPIConfig
 from commute_weather.pipelines.commute_predictor import CommutePredictor
-from commute_weather.data_sources.weather_api import fetch_kma_weather
+from commute_weather.data_sources.kma_api import fetch_recent_weather_kma
 
 app = FastAPI(
     title="출퇴근길 날씨 친구",
@@ -284,7 +284,7 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             title = "📱 현재 시점 예측"
 
             # 현재 날씨를 위한 최신 관측 데이터 가져오기
-            latest_observations = fetch_kma_weather(config, lookback_hours=1)
+            latest_observations = fetch_recent_weather_kma(config, lookback_hours=1)
             current_temp = None
             current_humidity = None
             current_precipitation = None
@@ -385,7 +385,7 @@ async def test_api() -> Dict[str, str]:
     """Test KMA API connection."""
     try:
         config = get_kma_config()
-        observations = fetch_kma_weather(config, lookback_hours=1)
+        observations = fetch_recent_weather_kma(config, lookback_hours=1)
 
         if observations:
             latest = observations[-1]

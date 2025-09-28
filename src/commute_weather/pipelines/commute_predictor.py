@@ -8,7 +8,8 @@ from typing import Optional
 import pytz
 
 from ..config import KMAAPIConfig
-from ..data_sources.weather_api import fetch_kma_weather, WeatherObservation
+from ..data_sources.kma_api import fetch_recent_weather_kma
+from ..data_sources.weather_api import WeatherObservation
 from .baseline import compute_commute_comfort_score, ComfortScoreBreakdown
 
 
@@ -36,7 +37,7 @@ class CommutePredictor:
         current_time = dt.datetime.now(kst)
 
         # Get weather data from last 3 hours for morning prediction
-        observations = fetch_kma_weather(
+        observations = fetch_recent_weather_kma(
             self.kma_config,
             lookback_hours=3
         )
@@ -65,7 +66,7 @@ class CommutePredictor:
         current_time = dt.datetime.now(kst)
 
         # Get weather data from last 3 hours for evening prediction
-        observations = fetch_kma_weather(
+        observations = fetch_recent_weather_kma(
             self.kma_config,
             lookback_hours=3
         )

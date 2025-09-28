@@ -150,12 +150,12 @@ def normalize_kma_observations(response_text: str) -> List[WeatherObservation]:
             # KMA API: field 14 is typically RN (hourly precipitation in mm)
             precipitation_mm = 0.0
 
-            # Use only the primary hourly precipitation field (index 14)
+            # Use only the most recent/primary precipitation field (field 14)
             if len(parts) > 14 and parts[14] not in ['-9.0', '-9', '-', '']:
                 try:
-                    precip_val = float(parts[14])
-                    if precip_val >= 0:  # Accept 0 and positive values, skip negative sentinel values
-                        precipitation_mm = precip_val
+                    precipitation_mm = float(parts[14])
+                    if precipitation_mm < 0:  # Handle negative sentinel values
+                        precipitation_mm = 0.0
                 except ValueError:
                     precipitation_mm = 0.0
 

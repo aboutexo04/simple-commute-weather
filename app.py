@@ -243,19 +243,18 @@ async def home():
 
                 // 지금 날씨는 온도/습도/강수량 표시 (쾌적지수 없음)
                 if (data.title.includes('현재 시점')) {
-                    let precipitationInfo = '';
-                    if (data.current_precipitation > 0) {
+                    const precipitationValue = Number(data.current_precipitation ?? 0);
+                    let precipitationInfo = '<p>☀️ 강수: 없음</p>';
+                    if (precipitationValue > 0) {
                         const precipIcon = data.current_precipitation_type === 'snow' ? '❄️' : '🌧️';
                         const precipType = data.current_precipitation_type === 'snow' ? '눈' : '비';
-                        precipitationInfo = `<p>${precipIcon} ${precipType}: ${data.current_precipitation}mm</p>`;
-                    } else {
-                        precipitationInfo = '<p>☀️ 강수: 없음</p>';
+                        precipitationInfo = `<p>${precipIcon} ${precipType}: ${precipitationValue}mm</p>`;
                     }
 
                     document.getElementById('result').innerHTML = `
                         <p><strong>📅 현재 시간:</strong> ${data.prediction_time}</p>
-                        <p>🌡️ 온도: ${data.current_temp || 'N/A'}°C</p>
-                        <p>💧 습도: ${data.current_humidity || 'N/A'}%</p>
+                        <p>🌡️ 온도: ${data.current_temp ?? 'N/A'}°C</p>
+                        <p>💧 습도: ${data.current_humidity ?? 'N/A'}%</p>
                         ${precipitationInfo}
                     `;
                 } else {

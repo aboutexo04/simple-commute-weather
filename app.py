@@ -299,10 +299,10 @@ async def predict(prediction_type: str) -> Dict[str, Any]:
             # 현재 시간이 오전 6-9시가 아니면 안내 메시지 (한국 시간 기준)
             kst = pytz.timezone('Asia/Seoul')
             current_hour = datetime.now(kst).hour
-            if not (6 <= current_hour <= 9):
+            if not (6 <= current_hour < 9):
                 return {
                     "title": "🌅 출근길 예측",
-                    "message": "출근길 예측은 오전 6-9시에 가장 정확합니다.",
+                    "message": "출근길 예측은 오전 6-8시에 가장 정확합니다.",
                     "current_time": datetime.now(kst).strftime("%Y-%m-%d %H:%M"),
                     "recommendation": "아침 시간대에 다시 확인해주세요! 😊"
                 }

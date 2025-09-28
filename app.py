@@ -140,7 +140,7 @@ async def home():
             .excellent { color: #FFD700; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
             .good { color: #90EE90; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
             .uncomfortable { color: #FFA500; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-            .very_uncomfortable { color: #FF6B6B; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+            .harsh { color: #FF6B6B; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         </style>
     </head>
     <body>
@@ -233,7 +233,7 @@ async def home():
 
                 const scoreClass = data.score >= 80 ? 'excellent' :
                                  data.score >= 60 ? 'good' :
-                                 data.score >= 50 ? 'uncomfortable' : 'very_uncomfortable';
+                                 data.score >= 50 ? 'uncomfortable' : 'harsh';
 
                 const emoji = data.score >= 80 ? '☀️' :
                              data.score >= 60 ? '😊' :

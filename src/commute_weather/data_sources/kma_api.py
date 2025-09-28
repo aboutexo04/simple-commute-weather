@@ -14,7 +14,7 @@ from .weather_api import WeatherObservation
 
 _TEMPERATURE_KEYS: Sequence[str] = ("ta", "temp", "temperature")
 _WIND_SPEED_KEYS: Sequence[str] = ("ws", "wind", "wind_speed")
-_PRECIP_KEYS: Sequence[str] = ("rn", "pr1", "precip", "precipitation")
+_PRECIP_KEYS: Sequence[str] = ("rn", "rn_1", "rn_2", "pr1", "precip", "precipitation")
 _HUMIDITY_KEYS: Sequence[str] = ("hm", "rh", "reh", "humidity")
 _SENTINEL_THRESHOLD = -900.0
 
@@ -76,19 +76,22 @@ def _parse_typ01_response(
     end_time: dt.datetime,
 ) -> List[WeatherObservation]:
     lines = [line.strip() for line in payload.splitlines() if line.strip()]
-    data_lines = [line for line in lines if not line.startswith("#")]
+    header = _extract_header(lines)
 
+    data_lines = [line for line in lines if not line.startswith("#")]
     if not data_lines:
         return []
 
-    header_tokens = data_lines[0].split()
-    has_header = _looks_like_header(header_tokens)
-
-    if has_header:
-        header = [token.lower() for token in header_tokens]
-        row_iter = (line.split() for line in data_lines[1:])
+    first_tokens = data_lines[0].split()
+    if header is None:
+        has_header = _looks_like_header(first_tokens)
+        if has_header:
+            header = [token.lower() for token in first_tokens]
+            row_iter = (line.split() for line in data_lines[1:])
+        else:
+            header = _fallback_header(len(first_tokens))
+            row_iter = (line.split() for line in data_lines)
     else:
-        header = _fallback_header(len(data_lines[0].split()))
         row_iter = (line.split() for line in data_lines)
 
     observations: List[WeatherObservation] = []
@@ -102,8 +105,12 @@ def _parse_typ01_response(
 
         temperature = _coerce_float_from_row(row, _TEMPERATURE_KEYS)
         wind_speed = _coerce_float_from_row(row, _WIND_SPEED_KEYS) or 0.0
-        precipitation = _coerce_float_from_row(row, _PRECIP_KEYS) or 0.0
+        precipitation = _coerce_float_from_row(row, _PRECIP_KEYS)
+        if precipitation is None or precipitation < 0:
+            precipitation = 0.0
         humidity = _coerce_float_from_row(row, _HUMIDITY_KEYS)
+        if humidity is not None and humidity < 0:
+            humidity = None
 
         # Determine precipitation type based on temperature
         precipitation_type = "none"
@@ -131,6 +138,54 @@ def _parse_typ01_response(
 def _looks_like_header(tokens: Sequence[str]) -> bool:
     lowered = {token.lower() for token in tokens}
     return any(name in lowered for name in ("tm", "ta", "ws", "rn", "hm", "reh"))
+
+
+def _extract_header(lines: Sequence[str]) -> Optional[list[str]]:
+    """Pull header tokens from the comment block if present."""
+
+    for line in lines:
+        if not line.startswith("#"):
+            continue
+        stripped = line.lstrip("#").strip()
+        if not stripped:
+            continue
+        upper = stripped.upper()
+        if "YYMMDD" not in upper or "STN" not in upper:
+            continue
+
+        raw_tokens = stripped.split()
+        return _normalize_header_tokens(raw_tokens)
+    return None
+
+
+_HEADER_ALIASES: Mapping[str, str] = {
+    "yymmddhhmi": "tm",
+    "tm": "tm",
+    "stn": "stn",
+    "ta": "ta",
+    "hm": "hm",
+    "rh": "hm",
+    "reh": "hm",
+    "ws": "ws",
+    "rn": "rn",
+}
+
+
+def _normalize_header_tokens(raw_tokens: Sequence[str]) -> list[str]:
+    counts: dict[str, int] = {}
+    normalized: list[str] = []
+
+    for token in raw_tokens:
+        key = _HEADER_ALIASES.get(token.lower(), token.lower())
+        if key in counts:
+            suffix = counts[key]
+            normalized.append(f"{key}_{suffix}")
+            counts[key] = suffix + 1
+        else:
+            normalized.append(key)
+            counts[key] = 1
+
+    return normalized
 
 
 def _fallback_header(width: int) -> List[str]:

@@ -60,7 +60,11 @@ def test_predict_now_uses_latest_observation(monkeypatch: pytest.MonkeyPatch) ->
         def get_current_prediction(self) -> CommutePrediction:
             return _make_prediction(latest)
 
+    def _unexpected_fetch(*_: object, **__: object) -> None:  # pragma: no cover - guard
+        raise AssertionError("fetch_recent_weather_kma should not be called when latest observation exists")
+
     monkeypatch.setattr(web_app, "CommutePredictor", DummyPredictor)
+    monkeypatch.setattr(web_app, "fetch_recent_weather_kma", _unexpected_fetch)
 
     client = TestClient(web_app.app)
     response = client.get("/predict/now")
@@ -83,14 +87,24 @@ def test_predict_now_handles_missing_observation(monkeypatch: pytest.MonkeyPatch
         def get_current_prediction(self) -> CommutePrediction:
             return _make_prediction(None)
 
+    fallback_observation = WeatherObservation(
+        timestamp=dt.datetime(2024, 1, 1, 7, 0),
+        temperature_c=1.0,
+        wind_speed_ms=1.5,
+        precipitation_mm=0.2,
+        relative_humidity=70.0,
+        precipitation_type="snow",
+    )
+
     monkeypatch.setattr(web_app, "CommutePredictor", DummyPredictor)
+    monkeypatch.setattr(web_app, "fetch_recent_weather_kma", lambda *_, **__: [fallback_observation])
 
     client = TestClient(web_app.app)
     response = client.get("/predict/now")
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["current_temp"] is None
-    assert payload["current_humidity"] is None
-    assert payload["current_precipitation"] is None
-    assert payload["current_precipitation_type"] is None
+    assert payload["current_temp"] == pytest.approx(1.0)
+    assert payload["current_humidity"] == pytest.approx(70.0)
+    assert payload["current_precipitation"] == pytest.approx(0.2)
+    assert payload["current_precipitation_type"] == "snow"

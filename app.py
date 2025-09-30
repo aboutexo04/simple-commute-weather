@@ -4,6 +4,10 @@ import os
 from datetime import datetime
 from typing import Dict, Any
 import pytz
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, Response

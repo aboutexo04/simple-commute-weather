@@ -15,7 +15,7 @@ class KMAAPIConfig:
     auth_key: str
     station_id: str
     help_flag: int = 0
-    timeout_seconds: float = 10.0
+    timeout_seconds: float = 30.0
     timezone: str = "Asia/Seoul"
 
 
